@@ -1,0 +1,41 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('4595427U-OP-S1') {
+            steps {
+                echo 'Stage 1'
+            }
+        }
+        stage('4595427U-OP-S2') {
+            steps {
+                echo 'Stage 2'
+            }
+        }
+        stage('4595427U-OP-S3') {
+            steps {
+                echo 'Stage 3'
+            }
+        }
+        stage('4595427U-OP-S4') {
+            steps {
+                echo 'Stage 4'
+            }
+        }
+        stage('4595427U-OP-S5') {
+            steps {
+                echo 'Stage 5'
+            }
+        }
+        stage('4595427U-OP-S6') {
+            steps {
+                echo 'Stage 6'
+            }
+        }
+        stage('4595427U-OP-S7') {
+            steps {
+                echo 'Stage 7'
+            }
+        }
+    }
+}
