@@ -36,13 +36,43 @@ pipeline {
         }
         stage('4595427U-OP-S2') {
             steps {
-                echo 'Stage 2'
+				script 
+				{
+				sh "curl -Is http://localhost:32500 | head -n 1 > /tmp/uatsvr-result-file"
+				def result = sh(script: "awk '{print $2}' /tmp/uatsvr-result-file", returnStdout: true).trim()
+				if (result == "200") 
+				{
+					echo "4595427u_OP_S2: uat svr is running"
+				} 
+				else {
+					echo "4595427u_OP_S2: uat svr fails"
+					}
+				}
             }
         }
         stage('4595427U-OP-S3') {
             steps {
-                echo 'Stage 3'
-            }
+				script {
+					echo "4595427u_OP_S3: Proceed stress test uat web server?"
+					def userChoice = input(
+						id: 'UserInput', message: 'Proceed with stress test on uat web server?',
+						parameters: [
+							choice(
+								name: 'Decision',
+								choices: "Proceed with stress test on uat web server\nAbort",
+							)
+						]
+					)
+
+					if (userChoice == "Abort") {
+						echo "User selected Abort. Aborting subsequent stages."
+						currentBuild.result = 'ABORTED'
+						error("Aborted by user.")
+					} else {
+						echo "User selected to proceed with stress test on uat web server."
+					}
+				}
+			}
         }
         stage('4595427U-OP-S4') {
             steps {
