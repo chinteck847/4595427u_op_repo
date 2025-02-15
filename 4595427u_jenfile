@@ -4,7 +4,34 @@ pipeline {
     stages {
         stage('4595427U-OP-S1') {
             steps {
-                echo 'Stage 1'
+				script {
+                    // check if 'uatsvr_image' exists and return id of the container if uatsvr_image exist
+                    def existingImage = sh(
+                        script: "docker images -q uatsvr_image",
+                        returnStdout: true
+                    ).trim()
+					// remove existing uatsvr_image
+                    if (existingImage) {
+					echo 'removing existing image...'
+                        sh "docker rmi -f uatsvr_image"
+                    }
+                    sh "docker commit 4595427u_uatsvr uatsvr_image"
+					
+					sh '''#!/bin/bash
+						mkdir -p /tmp/4595427u
+						puppet resource file /tmp/4595427u/research ensure=absent force=true;
+						puppet resource file /tmp/4595427u/research ensure=directory;
+						cd /tmp/4595427u/research;
+						git clone https://github.com/chinteck847/4595427u_op_repo.git;
+						targets=4595427u_uatsvr.localdomain;
+						locate_script='/tmp/4595427u/research/4595427u_op_repo/4595427u_script';
+						bolt script run $locate_script -t $targets -u clientadm -p pass123 --no-host-key-check --run-as root;
+					'''
+                }
+			
+                echo 'uat web server is backup and updated'
+				
+				
             }
         }
         stage('4595427U-OP-S2') {
