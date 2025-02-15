@@ -39,7 +39,7 @@ pipeline {
 				script 
 				{
 				sh "curl -Is http://localhost:32500 | head -n 1 > /tmp/uatsvr-result-file"
-				def result = sh(script: "awk '{print $2}' /tmp/uatsvr-result-file", returnStdout: true).trim()
+				def result = sh(script: "awk '{print \$2}' /tmp/uatsvr-result-file", returnStdout: true).trim()
 				if (result == "200") 
 				{
 					echo "4595427u_OP_S2: uat svr is running"
