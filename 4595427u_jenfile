@@ -56,11 +56,8 @@ pipeline {
 					def userChoice = input(
 						id: 'UserInput', message: 'Proceed with stress test on uat web server?',
 						parameters: [
-							choice(
-								name: 'Decision',
-								choices: "Proceed with stress test on uat web server\nAbort",
-							)
-						]
+                            choice(name: 'Decision', choices: ['Proceed with stress test on uat web server', 'Abort'])
+							]
 					)
 
 					if (userChoice == "Abort") {
@@ -85,13 +82,9 @@ pipeline {
 					def userChoice = input(
 						id: 'UserInput', message: 'Proceed to update prod web server',
 						parameters: [
-							choice(
-								name: 'Decision',
-								choices: "Proceed to update prod web server\nAbort",
-							)
-						]
-					)
-
+                            choice(name: 'Decision', choices: ['Proceed to update prod web server', 'Abort'])
+							]
+						)
 					if (userChoice == "Abort") {
 						echo "User selected Abort. Aborting Stage 5 to deploy to prod web server"
 						currentBuild.result = 'ABORTED'
@@ -135,7 +128,32 @@ pipeline {
         }
         stage('4595427U-OP-S7') {
             steps {
-                echo 'Stage 7'
+				script 
+				{
+				sh "curl -Is http://localhost:32600 | head -n 1 > /tmp/prodsvr-result-file"
+				def result = sh(script: "awk '{print \$2}' /tmp/prodsvr-result-file", returnStdout: true).trim()
+				if (result == "200") {
+					echo "4595427u_OP_S7: Production website is operational"
+					} 
+				else {
+						def userChoice = input(
+                        message: 'Issue encountered what should be done?',
+                        parameters: [
+                            choice(name: 'Decision', choices: ['Trigger roll back', 'Troubleshooting'])
+							]
+						)
+
+						if (userChoice == "Trigger roll back") {
+							 echo "4595427U-OP-S7: Production website is rolling back"
+							 currentBuild.result = 'ABORTED'
+							 error("Triggered Roll Back pipeline.")
+						} else {
+							echo "4595427U-OP-S7: Troubleshooting of Production website is in progress"
+							currentBuild.result = 'ABORTED'
+							error("Triggered Troubleshooting Pipeline")
+						}
+					}
+				}
             }
         }
     }
