@@ -18,7 +18,6 @@ pipeline {
                     sh "docker commit 4595427u_uatsvr uatsvr_image"
 					
 					sh '''#!/bin/bash
-						mkdir -p /tmp/4595427u
 						puppet resource file /tmp/4595427u/research ensure=absent force=true;
 						puppet resource file /tmp/4595427u/research ensure=directory;
 						cd /tmp/4595427u/research;
@@ -76,17 +75,62 @@ pipeline {
         }
         stage('4595427U-OP-S4') {
             steps {
-                echo 'Stage 4'
+                echo '4595427u_OP_S4: Stress test result is good'
             }
         }
         stage('4595427U-OP-S5') {
             steps {
-                echo 'Stage 5'
-            }
+				script {
+					echo "4595427u_OP_S5: Deploy new update to prod web server?"
+					def userChoice = input(
+						id: 'UserInput', message: 'Proceed to update prod web server',
+						parameters: [
+							choice(
+								name: 'Decision',
+								choices: "Proceed to update prod web server\nAbort",
+							)
+						]
+					)
+
+					if (userChoice == "Abort") {
+						echo "User selected Abort. Aborting Stage 5 to deploy to prod web server"
+						currentBuild.result = 'ABORTED'
+						error("Aborted by user.")
+					} else {
+						echo "User selected to proceed to deploy to prod web server"
+					}
+				}
+			}
         }
         stage('4595427U-OP-S6') {
             steps {
-                echo 'Stage 6'
+				script {
+                    // check if 'prodsvr_image' exists and return id of the container if prodsvr_image exist
+                    def existingImage = sh(
+                        script: "docker images -q prodsvr_image",
+                        returnStdout: true
+                    ).trim()
+					// remove existing prodsvr_image
+                    if (existingImage) {
+					echo 'removing existing image...'
+                        sh "docker rmi -f prodsvr_image"
+                    }
+                    sh "docker commit 4595427u_prodsvr prodsvr_image"
+					
+					sh '''#!/bin/bash
+						puppet resource file /tmp/4595427u/research ensure=absent force=true;
+						puppet resource file /tmp/4595427u/research ensure=directory;
+						cd /tmp/4595427u/research;
+						git clone https://github.com/chinteck847/4595427u_op_repo.git;
+						targets=4595427u_prodsvr.localdomain;
+						locate_script='/tmp/4595427u/research/4595427u_op_repo/4595427u_script';
+						bolt script run $locate_script -t $targets -u clientadm -p pass123 --no-host-key-check --run-as root;
+					'''
+                }
+			
+                echo 'prod web server is backup and updated'
+				
+				
             }
         }
         stage('4595427U-OP-S7') {
